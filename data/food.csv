@@ -1,0 +1,10 @@
+bread,"bread bread bread",common,food,nonmeat
+rice,"rice rice rice",common,food,oriental
+apple-pie,"papple pie",common,food,nonmeat,sweet
+apple,"paple not banana",common,food,nonmeat,fruit
+banana,"bananarama",ucommon,food,nonmeat,fruit
+carrot,"orange root vegie",common,food,nonmeat,vegetable
+potato,"dig them up, eat them all",common,food,nonmeat,vegetable
+chicken-meat,"KFC rulez",common,food,meat
+dried-fish,"salty and fishy",common,food,meat,preserved
+lamb-meat,"Marry had a little... steak",common,food,meat
