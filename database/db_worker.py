@@ -1,5 +1,5 @@
 from typing import List
-from sqlalchemy import create_engine, func, literal_column
+from sqlalchemy import create_engine, func, select
 from sqlalchemy.orm import Session, Query
 from pprint import pprint
 
@@ -18,7 +18,7 @@ class ItemBuilder:
 
     @query.getter
     def query(self):
-        return self._query #.distinct()
+        return self._query.distinct()
 
     def with_item_ids(self, item_ids: List[int]):
         self._query = self._query.filter(ItemsTable.item_id.in_(item_ids))
@@ -28,17 +28,19 @@ class ItemBuilder:
         self._query = self._query.filter(TagsTable.tag.in_(tags))
         return self
 
-    # TODO: NOT WORKING -> Find the way to filter combined tags without creating new subquery
-    # def with_tags_combined(self, tags: List[str]):
-    #     self._query = self._query(TagsTable.item_id, func.count(TagsTable.item_id).label('c'))\
-    #                    .filter(TagsTable.tag.in_(tags))\
-    #                    .group_by(TagsTable.item_id)\
-    #                    .having(literal_column('c') >= len(tags))
+    def with_tags_combined(self, tags: List[str]):
+        self._query = self._query.filter(ItemsTable.item_id.in_(
+            Query(TagsTable.item_id)
+                .filter(TagsTable.tag.in_(tags))
+                .group_by(TagsTable.item_id)
+                .having(func.count(TagsTable.item_id) >= len(tags))
+        ))
+        return self
 
-    # TODO: NOT WORKING -> Exclude must be done on ItemsTable.item_id level based on list of item_ids with tag
-    #       This way, items with multiple other tags are still included
     def exclude_tags(self, tags: List[str]):
-        self._query = self._query.filter(TagsTable.tag.not_in(tags))
+        self._query = self._query.filter(
+            ItemsTable.item_id.not_in(select(TagsTable.item_id).filter(TagsTable.tag.in_(tags)))
+        )
         return self
 
     def exclude_item_ids(self, item_ids: List[int]):
@@ -78,9 +80,9 @@ class DBWorker:
         print([x for x in self.engine.execute("SELECT * FROM items")])
         print([x for x in self.engine.execute("SELECT * FROM tags")])
         pprint([x for x in self.get_items(ItemBuilder()
-                                          .with_tags(tags=['common', 'meat'])
-                                          .with_item_ids(item_ids=[1, 7, 8, 9])
+                                          .with_tags_combined(tags=['common', 'food'])
+                                          .with_item_ids(item_ids=[1, 2, 3, 4, 6, 8, 9])
                                           .exclude_item_ids([7, 9])
-                                          .exclude_tags(tags=['meat'])
+                                          .exclude_tags(tags=['preserved'])
                                           )])
         print("------DEBUG_END------")
