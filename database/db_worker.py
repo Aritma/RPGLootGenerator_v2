@@ -18,7 +18,7 @@ class ItemBuilder:
 
     @query.getter
     def query(self):
-        return self._query.distinct()
+        return self._query #.distinct()
 
     def with_item_ids(self, item_ids: List[int]):
         self._query = self._query.filter(ItemsTable.item_id.in_(item_ids))
@@ -35,6 +35,8 @@ class ItemBuilder:
     #                    .group_by(TagsTable.item_id)\
     #                    .having(literal_column('c') >= len(tags))
 
+    # TODO: NOT WORKING -> Exclude must be done on ItemsTable.item_id level based on list of item_ids with tag
+    #       This way, items with multiple other tags are still included
     def exclude_tags(self, tags: List[str]):
         self._query = self._query.filter(TagsTable.tag.not_in(tags))
         return self
@@ -79,5 +81,6 @@ class DBWorker:
                                           .with_tags(tags=['common', 'meat'])
                                           .with_item_ids(item_ids=[1, 7, 8, 9])
                                           .exclude_item_ids([7, 9])
+                                          .exclude_tags(tags=['meat'])
                                           )])
         print("------DEBUG_END------")
